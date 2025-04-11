@@ -1,0 +1,57 @@
+name: Auto-create Idea Issues from README
+
+on:
+  push:
+    paths:
+      - "README.md"
+  workflow_dispatch:
+
+jobs:
+  create-issues:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Set up GitHub CLI
+      uses: cli/cli-action@v1
+      with:
+        version: latest
+
+    - name: Extract Ideas and Create Issues
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        awk '
+        BEGIN { RS="### Idea" }
+        NR>1 {
+          split($0, lines, "\n")
+          title = lines[1]
+          body = ""
+          for (i=2; i<=length(lines); i++) {
+            if (lines[i] ~ /^### /) break
+            body = body lines[i] "\n"
+          }
+          gsub(/"/, "\\\"", body)
+          print "TITLE>>>" title
+          print "BODY>>>" body
+        }
+        ' README.md > ideas.txt
+
+        # Loop through each extracted idea and create issue
+        csplit -z -f idea_ ideas.txt '/^TITLE>>>/' '{*}'
+        for f in idea_*; do
+          title=$(grep '^TITLE>>>' "$f" | sed 's/^TITLE>>> //')
+          body=$(sed -n '/^BODY>>>/,$p' "$f" | sed 's/^BODY>>> //')
+
+          if ! gh issue list --state all --limit 100 | grep -q "$title"; then
+            echo "Creating issue: $title"
+            gh issue create \
+              --title "$title" \
+              --body "### Idea 💡\n\n$body\n\nVote by adding 👍 to this issue!" \
+              --label "idea"
+          else
+            echo "Issue already exists: $title"
+          fi
+        done
