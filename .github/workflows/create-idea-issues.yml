@@ -24,8 +24,10 @@ jobs:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         awk '
-        BEGIN { RS="### Idea" }
-        NR>1 {
+        BEGIN { RS="### [^#]"; in_ideas=0 }
+        /^## What You Can Do\?/ { in_ideas=1; next }
+        /^## / { if(in_ideas==1) in_ideas=0; next }
+        in_ideas==1 && NR>1 {
           split($0, lines, "\n")
           title = lines[1]
           body = ""
@@ -41,17 +43,53 @@ jobs:
 
         # Loop through each extracted idea and create issue
         csplit -z -f idea_ ideas.txt '/^TITLE>>>/' '{*}'
+        
+        # Create a file to store issue URLs for the README update
+        > issue_urls.txt
+        
         for f in idea_*; do
           title=$(grep '^TITLE>>>' "$f" | sed 's/^TITLE>>> //')
           body=$(sed -n '/^BODY>>>/,$p' "$f" | sed 's/^BODY>>> //')
 
-          if ! gh issue list --state all --limit 100 | grep -q "$title"; then
+          # Check if issue exists or create new one
+          issue_url=""
+          if ! issue_data=$(gh issue list --state all --limit 100 --json title,url | jq -r ".[] | select(.title == \"$title\") | .url"); then
             echo "Creating issue: $title"
-            gh issue create \
+            issue_data=$(gh issue create \
               --title "$title" \
               --body "### Idea 💡\n\n$body\n\nVote by adding 👍 to this issue!" \
-              --label "idea"
+              --label "idea" \
+              --json url | jq -r ".url")
+            echo "Created issue: $issue_data"
           else
             echo "Issue already exists: $title"
           fi
+          
+          # Store the issue URL with its title for README update
+          echo "$title|$issue_data" >> issue_urls.txt
         done
+        
+        # Update README.md with issue links for voting
+        cp README.md README.md.bak
+        awk -F'|' 'NR==FNR {issues[$1]=$2; next} 
+        { 
+          if ($0 ~ /^### [^#]/) { 
+            title = substr($0, 4)
+            gsub(/^[ \t]+/, "", title)
+            if (issues[title] != "") {
+              print $0 " [Vote 👍](" issues[title] ")"
+            } else {
+              print $0
+            }
+          } else {
+            print $0
+          }
+        }' issue_urls.txt README.md.bak > README.md
+        
+    - name: Commit README changes
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git add README.md
+        git diff --staged --quiet || git commit -m "Add voting links to ideas in README"
+        git push
