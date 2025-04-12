@@ -7,12 +7,13 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write  # Allow write access to repository contents
+  contents: write
+  issues: write
 
 jobs:
   create-issues:
     runs-on: ubuntu-latest
-
+    
     container:
       image: ghcr.io/catthehacker/ubuntu:act-latest
 
@@ -37,91 +38,73 @@ jobs:
 
     - name: Extract Ideas and Create Issues
       env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # Extract ideas starting with '### Idea' and create issues
-        awk '
-        BEGIN { RS="### Idea [^#]"; in_ideas=0 }
-        /### Idea/ { in_ideas=1; title = substr($0, 9); body = ""; next }
-        in_ideas==1 {
-          if ($0 ~ /^### Idea/) {
-            print "TITLE>>>" title
-            print "BODY>>>" body
-            title = substr($0, 9);
-            body = ""
-          } else {
-            body = body $0 "\n"
-          }
-        }
-        END {
-          print "TITLE>>>" title
-          print "BODY>>>" body
-        }
-        ' README.md > ideas.txt
-
-        # Split extracted ideas into separate files
-        csplit -z -f idea_ ideas.txt '/^TITLE>>>/' '{*}'
+        # Extract idea sections from the README.md
+        csplit -f idea_ -z README.md '/^### Idea/' '{*}'
+        
+        # Remove the first file (content before the first idea)
+        if [ -f idea_00 ]; then
+          rm idea_00
+        fi
         
         # Create a file to store issue URLs for the README update
         > issue_urls.txt
         
-        # Function to create issues in parallel
-        create_issue() {
-          f=$1
-          title=$(grep '^TITLE>>>' "$f" | sed 's/^TITLE>>> //')
-          body=$(sed -n '/^BODY>>>/,$p' "$f" | sed 's/^BODY>>> //')
-
-          # Check if issue exists or create new one
-          issue_url=""
-          if ! issue_data=$(gh issue list --state all --limit 100 --json title,url | jq -r ".[] | select(.title == \"$title\") | .url"); then
-            echo "Creating issue: $title"
-            issue_data=$(gh issue create \
-              --title "$title" \
-              --body "### Idea \n\n$body\n\nVote by adding 👍 to this issue!" \
-              --label "idea" \
-              --json url | jq -r ".url") || exit 1
-            echo "Created issue: $issue_data"
+        # Process each idea file
+        for f in idea_*; do
+          # Extract title from the first line
+          title=$(head -n 1 "$f" | sed 's/^### Idea[: -]* *//')
+          
+          # Get the rest as body
+          body=$(tail -n +2 "$f")
+          
+          echo "Processing idea: $title"
+          
+          # Check if issue with this title already exists
+          existing_issue=$(gh issue list --state all --limit 100 --json title,url --jq ".[] | select(.title == \"$title\") | .url")
+          
+          if [ -z "$existing_issue" ]; then
+            echo "Creating new issue for: $title"
+            issue_url=$(gh issue create --title "$title" --body "### Idea \n\n$body\n\nVote by adding 👍 to this issue!" --label "idea" --json url | jq -r '.url')
+            echo "Created issue: $issue_url"
           else
-            echo "Issue already exists: $title"
+            echo "Issue already exists: $existing_issue"
+            issue_url="$existing_issue"
           fi
           
           # Store the issue URL with its title for README update
-          echo "$title|$issue_data" >> issue_urls.txt
-        }
-
-        # Loop through idea_* files and create issues in parallel
-        for f in idea_*; do
-          create_issue "$f" &  # Run in the background
-          sleep 1  # Sleep for 1 second to avoid hitting rate limit
+          echo "$title|$issue_url" >> issue_urls.txt
         done
-
-        # Wait for all background processes to finish
-        wait
         
         # Update README.md with issue links for voting
         cp README.md README.md.bak
-        awk -F'|' 'NR==FNR {issues[$1]=$2; next} 
-        { 
-          if ($0 ~ /^### Idea [^#]/) { 
-            title = substr($0, 9)
-            gsub(/^[ \t]+/, "", title)
-            if (issues[title] != "") {
-              print $0 " [Vote 👍](" issues[title] ")"
-            } else {
-              print $0
-            }
-          } else {
-            print $0
-          }
-        }' issue_urls.txt README.md.bak > README.md
         
+        # Process README line by line
+        while IFS= read -r line; do
+          if [[ "$line" =~ ^###\ Idea ]]; then
+            # Extract the title from the line
+            title=$(echo "$line" | sed 's/^### Idea[: -]* *//')
+            
+            # Find if we have an issue URL for this title
+            issue_url=$(grep "^$title|" issue_urls.txt | cut -d'|' -f2)
+            
+            if [ -n "$issue_url" ]; then
+              echo "$line [Vote 👍]($issue_url)"
+            else
+              echo "$line"
+            fi
+          else
+            echo "$line"
+          fi
+        done < README.md.bak > README.md
+
     - name: Commit README changes
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         git add README.md
         git diff --staged --quiet || git commit -m "Add voting links to ideas in README"
-        
-        # Authenticate using GITHUB_TOKEN for the push
-        git remote set-url origin https://github.com/${{ github.repository }}.git
-        git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
