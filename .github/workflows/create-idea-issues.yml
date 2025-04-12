@@ -82,7 +82,7 @@ jobs:
         
         # Process README line by line
         while IFS= read -r line; do
-          if [[ "$line" =~ ^###\ Idea ]]; then
+          if [ "$(echo "$line" | grep -E '^###[ ]+Idea')" ]; then
             # Extract the title from the line
             title=$(echo "$line" | sed 's/^### Idea[: -]* *//')
             
