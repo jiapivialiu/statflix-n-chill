@@ -179,6 +179,12 @@ quarto preview
 2. Search: "text summarizer", "GPT-2", or "dreambooth".
 3. Click around. Try entering your own text.
 
+
+### Idea 11: `leaflet` in R for maps
+
+Optional Challenge:
+  * Plot your city using [Basemaps](https://rstudio.github.io/leaflet/articles/basemaps.html).
+
 ***More fun is coming soon!***
 
 **Want to contribute some fun ideas? Fork this repository and create a Pull Request to it!**
