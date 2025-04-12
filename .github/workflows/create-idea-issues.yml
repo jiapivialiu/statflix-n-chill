@@ -10,45 +10,53 @@ jobs:
   create-issues:
     runs-on: ubuntu-latest
 
+    container:
+      image: ghcr.io/catthehacker/ubuntu:act-latest
+
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3
-
+    
     - name: Set up GitHub CLI
       run: |
-        sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
-        echo "deb [arch=amd64] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-        sudo apt update
-        sudo apt install gh -y
-    
+        apt update
+        apt install -y curl gnupg
+        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+          > /etc/apt/sources.list.d/github-cli.list
+        apt update
+        apt install gh -y
+
     - name: Authenticate GitHub CLI
+      run: gh auth setup-git
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: gh auth login --with-token <<< "$GH_TOKEN"
 
     - name: Extract Ideas and Create Issues
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        # Extract ideas starting with '### Idea' and create issues
         awk '
-        BEGIN { RS="### [^#]"; in_ideas=0 }
-        /^## What You Can Do\?/ { in_ideas=1; next }
-        /^## / { if(in_ideas==1) in_ideas=0; next }
-        in_ideas==1 && NR>1 {
-          split($0, lines, "\n")
-          title = lines[1]
-          body = ""
-          for (i=2; i<=length(lines); i++) {
-            if (lines[i] ~ /^### /) break
-            body = body lines[i] "\n"
+        BEGIN { RS="### Idea [^#]"; in_ideas=0 }
+        /### Idea/ { in_ideas=1; title = substr($0, 9); body = ""; next }
+        in_ideas==1 {
+          if ($0 ~ /^### Idea/) {
+            print "TITLE>>>" title
+            print "BODY>>>" body
+            title = substr($0, 9);
+            body = ""
+          } else {
+            body = body $0 "\n"
           }
-          gsub(/"/, "\\\"", body)
+        }
+        END {
           print "TITLE>>>" title
           print "BODY>>>" body
         }
         ' README.md > ideas.txt
 
-        # Loop through each extracted idea and create issue
+        # Split extracted ideas into separate files
         csplit -z -f idea_ ideas.txt '/^TITLE>>>/' '{*}'
         
         # Create a file to store issue URLs for the README update
@@ -64,7 +72,7 @@ jobs:
             echo "Creating issue: $title"
             issue_data=$(gh issue create \
               --title "$title" \
-              --body "### Idea 💡\n\n$body\n\nVote by adding 👍 to this issue!" \
+              --body "### Idea \n\n$body\n\nVote by adding 👍 to this issue!" \
               --label "idea" \
               --json url | jq -r ".url")
             echo "Created issue: $issue_data"
@@ -80,8 +88,8 @@ jobs:
         cp README.md README.md.bak
         awk -F'|' 'NR==FNR {issues[$1]=$2; next} 
         { 
-          if ($0 ~ /^### [^#]/) { 
-            title = substr($0, 4)
+          if ($0 ~ /^### Idea [^#]/) { 
+            title = substr($0, 9)
             gsub(/^[ \t]+/, "", title)
             if (issues[title] != "") {
               print $0 " [Vote 👍](" issues[title] ")"

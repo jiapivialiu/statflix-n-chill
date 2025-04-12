@@ -36,7 +36,7 @@ Contributions welcome, especially if they’re fun, nerdy, or semi-productive in
 
 ## What You Can Do?
 
-### ☁️ 1. Set Up a GitHub Repo with Daily Commits (for ✨Consistency Vibes✨)
+### Idea 1: ☁️ Set Up a GitHub Repo with Daily Commits (for ✨Consistency Vibes✨)
 
 **Why**: Make your contribution graph green daily, with zero effort!
 
@@ -48,7 +48,7 @@ Contributions welcome, especially if they’re fun, nerdy, or semi-productive in
   - 💚 [How to keep your GitHub contribution graph green](https://github.com/ryo-ma/github-profile-trophy/pull/29#issuecomment-1025371000)
   - Or just fork this ready-to-go repo: [`actions-js/push`](https://github.com/actions-js/push)
 
-### ✒️ 2. Use LaTeX to Draw a Neural Network
+### Idea 2: ✒️ Use LaTeX to Draw a Neural Network
 
 **Why**: It’s visual, satisfying, and kinda meditative.
 
@@ -59,7 +59,7 @@ Contributions welcome, especially if they’re fun, nerdy, or semi-productive in
 4. Starter Kits:
   - 🧠 [LaTeX Neural Network with TikZ Example](https://tikz.net/neural_networks/)
 
-### 📘 3. Add an Observable JavaScript Plot Inside a Quarto Document
+### Idea 3: 📘 Add an Observable JavaScript Plot Inside a Quarto Document
 
 **What**: Use a reactive JS cell in Quarto to show a cool plot.
 
@@ -79,7 +79,7 @@ Plot.plot({
 
 📎 Guide: [Observable + Quarto](https://quarto.org/docs/interactive/ojs/index.html)
 
-### 🎨 4. Make a Beautiful Table in R using `gt`
+### Idea 4: 🎨 Make a Beautiful Table in R using `gt`
 
 **What**: Turn a boring CSV into a slick, publish-ready table.
 
@@ -94,7 +94,7 @@ iris %>%
 
 📎 Guide: [Get Started with GT](https://gt.rstudio.com/articles/gt.html)
 
-### 📊 5. Animate a Plot in Python Using Plotly
+### Idea 5: 📊 Animate a Plot in Python Using Plotly
 
 **What**: Build a simple animated scatter plot.
 
@@ -110,7 +110,7 @@ fig.show()
 
 📎 More ideas: [Plotly Express Examples](https://plotly.com/python/plotly-express/)
 
-### 🔍 6. Animate a Plot in R Using gganimate
+### Idea 6: 🔍 Animate a Plot in R Using gganimate
 
 **Why**: Small win, satisfying output.
 
@@ -122,7 +122,7 @@ fig.show()
 4. Challenge:
   - Reimplement the animated figure [here](https://gganimate.com/index.html) on a dataset of your choice.
 
-### ✨ 7. Create an RShiny App that Does One Simple Thing
+### Idea 7: ✨ Create an RShiny App that Does One Simple Thing
 
 **What**: A slider that changes the mean of a histogram.
 
@@ -144,7 +144,7 @@ shinyApp(ui, server)
 
 📎 Copy-paste into: [RStudio Cloud](https://posit.cloud)
 
-### 📝 8. Build Your First Blog Post Using Quarto
+### Idea 8: 📝 Build Your First Blog Post Using Quarto
 
 **What**: A one-post site, hosted via GitHub Pages.
 
@@ -159,7 +159,7 @@ quarto preview
 📎 Full Guide: [Blogging with Quarto](https://quarto.org/docs/blog/)
 🧁 Bonus challenge: Add [Callout blocks](https://quarto.org/docs/authoring/callouts.html) for fun side notes.
 
-### 🪩 9. Copy Someone's GitHub Profile You Like (Then Personalize It)
+### Idea 9: 🪩 Copy Someone's GitHub Profile You Like (Then Personalize It)
 
 **What**: Make your profile page feel like you.
 
@@ -170,7 +170,7 @@ quarto preview
 4. 🎨 Add icons from SimpleIcons or shields from [Shields.io](https://shields.io).
 
 
-### 🎮 10. Play With an AI Model on HuggingFace — No Code Needed
+### Idea 10: 🎮 Play With an AI Model on HuggingFace — No Code Needed
 
 **What**: Try a model like text classification or voice cloning.
 
