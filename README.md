@@ -185,6 +185,29 @@ quarto preview
 Optional Challenge:
   * Plot your city using [Basemaps](https://rstudio.github.io/leaflet/articles/basemaps.html).
 
+### Idea 12: Git Basics: Understanding merge vs rebase
+
+**What**: Learn the difference between git merge and git rebase so you can manage branches with confidence.
+
+**How**:
+1. Understand the Purpose: Both are used to combine changes from one branch into another, but they handle history differently..
+2. `git merge` — Combine with history.
+3. `git rebase` — Linearize history.
+4. Know When to Use.
+    - Use merge if...
+      - You’re working with a team.
+      - You want to preserve the full history.
+      - Avoid rewriting commits.
+    - Use rebase if...
+  	  - You're cleaning up local history.
+      - You want a simple, linear history.
+      - Comfortable handling conflicts.
+
+Suggested reading: [Merging vs. rebasing](https://www.atlassian.com/git/tutorials/merging-vs-rebasing)
+
+✅ Bonus Tip: Never rebase shared branches (like `main`) that others might be using!
+
+
 ***More fun is coming soon!***
 
 **Want to contribute some fun ideas? Fork this repository and create a Pull Request to it!**
